@@ -1,0 +1,31 @@
+# Manuscript — not part of the code release
+rl_caustic.pdf
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# C/CUDA build artifacts
+Optimal_Transport_rl/build/
+render_exe_program/build/
+*.o
+*.so
+*.cubin
+*.fatbin
+
+# Generated experiment outputs
+result_sp_data/
+result_spline/
+log/
+Optimal_Transport_rl/weights/
+Optimal_Transport_rl/mesh_output/
+Optimal_Transport_rl/render_result/
+Optimal_Transport_rl/seed_point/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/

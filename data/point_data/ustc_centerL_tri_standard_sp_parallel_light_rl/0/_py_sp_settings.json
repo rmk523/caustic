@@ -1,0 +1,126 @@
+{
+    "_comment": "该配置用于测试新参数",
+    "test_num" : "sp_parallel_light_rl",
+    "spline_para":{
+        "spline_type" : "B_spline",
+        "ctrl_points_num" : [43,43],
+        "spline_degree" : 3,
+        "padding" : 0.01,
+        "if_regular" : true,
+        "regular_para" : 1e2,
+        "height_para" : [1e4,1e6]
+    },
+
+    "picture_para":{
+        "name" : "ustc_centerL",
+        "type" : "png",
+        "shrink_para" : 4,
+        "max_gray" : 255,
+        "gamma" : 2.4
+    },
+
+    "sample_point_para":{
+        "point_num": 160000,
+        "type" : "triangle",
+        "data_name" : "ustc_centerL_tri_standard",
+        "sample_domain" : [0.0, 40.0, 0.0, 40.0],
+        "total_iter" : 50001,
+        "convergence_tolerance" : 0.01,
+        "history_size" : 7,
+        "initial_step" : 1,
+        "if_use_edge_sample" : false,
+        "if_reflection_loss" : true, 
+        "thickness" : 15,
+        "if_aa_op_initial" : true,
+        "aa_history_size" : 7,
+        "aa_fixed_para" : -2
+    },
+
+    "input_point_para":{
+        "input_data_name" : "ustc_centerL_tri_standard_sp_parallel_light_rl",
+        "input_data_iter_number" : "2",
+        "input_data_number" : "30000"
+    },
+
+    "len_para":{
+        "z_of_len" : 0,
+        "z_of_receiver" : 160.0,
+        "proj_domain" : [0.0, 160.0, -60.0, 100.0],
+        "refraction_index" : 1.5
+    },
+
+    "light_para":{
+        "light_type" : "parallel_light",
+        "point_light_coordinate" : [20.0,20.0,-20.0]
+    },
+
+    "inte_opti_para":{
+        "pre_end_iter" : 30001,
+        "pre_iter_lr" : 2e-4,
+        "max_area_ratio" : 0.2,
+        "min_area_ratio" : 0.02,
+      
+        "total_para" : 1e6,
+        "inte_para_render_1" : 1e0,
+        "inte_para_render_2" : 1e0,
+        "if_use_sobel" : false,
+        "inte_para_sobel_1" : 5e-1,
+        "inte_para_sobel_2" : 5e-1,
+        "if_use_inte" : true,
+        "inte_para_inte_1" : 3e-1,
+        "inte_para_inte_2" : 3e-1,
+        "inte_para_small_area" : 1e-3,
+        "inte_para_big_area" : 1e-3,
+        "inte_para_proj_area" : 3e-3,
+        "if_edge_freeze" : true,
+        "inte_para_edge" : 1e2,
+        "if_outside_penalty" : false,
+        "penalty_para" : 5,
+        
+        "inte_para_rot" : 1e4,
+        "if_rot_para_expand" : true,
+        "inte_para_rot_expand" : [1e1, 1e1, 1e0],
+
+        "inte_epsilon_1" : 3e-1,
+        "inte_epsilon_2" : 3e-2,
+        "inte_theta_1" : 1.5,
+        "inte_theta_2" : 2,
+        "inte_delta" : 1.1,
+        "inte_delta_1" : 3e-1,
+        "inte_delta_2" : 0e-2,
+        "if_consider_reflection_loss" : true,
+        "if_use_picture_residual" : true,
+        "picture_residual_para" : 0.5
+    },
+
+    "total_opti_para":{
+        "total_ot_iter_num" : 2,
+        "ot_spline_end_iter" : [90001,30001],
+        "ot_spline_learn_rate" : [2e-3,1e-3],
+        "ot_refine_time" : [[0,30000],[0,40000],[0,50000]],
+        "thick_tolerant" : 0.5,
+
+        "total_op_iter_num" : 3,
+        "op_spline_end_iter" : [60001,60001,30001],
+        "op_spline_learn_rate" : [1e-3,2e-4,1e-4],
+        "op_refine_time" : [[2,10000]],
+        "op_convergence_time" : [[2,20000]],
+
+        "total_inte_end_iter" : [60001,30001,30001],
+        "total_inte_origin_learn_rate" : [2e-4,1e-4,5e-5],
+        "total_inte_aim_learn_rate" : [2e-4,1e-4,5e-5],
+        
+        "if_triangle_refine" : false,
+        "render_sample_num" : [3600,3600],
+        "test_sample_num" : [6400,6400],
+        "render_refine_n" : 3,
+        "render_end_iter" : 2401,
+        "learn_rate" : 1e-5,
+        "H_para" : 1.0,
+        "chunk_size" : 1000000,
+        "sigma" : 0.5,
+        "radius" : 2,
+        "sharp_sigma" : 0.5,
+        "sharp_radius" : 2
+    }
+}

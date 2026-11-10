@@ -1,0 +1,6 @@
+Gray sum (Image 1): 7.009205e+06
+Gray sum (Image 2): 6.668703e+06
+RRMSE / RRMSD      : 2.520197e-01
+MAE                : 4.983682e+00
+Normalized MAE     : 2.093984e-02
+SSIM               : 8.186708e-01
