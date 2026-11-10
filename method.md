@@ -1,9 +1,5 @@
 # Method Notes - Off-Axis Freeform Illumination Lens Design
 
-> Technical notes accompanying the code in this repository.
-> They describe the implemented algorithm, contain no figures, and are not the
-> manuscript. This is research code and has not been peer-reviewed.
-
 ## 1. Problem setting
 
 A uniform collimated beam with irradiance $I_s$ illuminates a lens whose front
