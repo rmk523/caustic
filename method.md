@@ -1,6 +1,6 @@
-# Method Notes — Off-Axis Freeform Illumination Lens Design
+# Method Notes - Off-Axis Freeform Illumination Lens Design
 
-> Independent technical notes accompanying the code in this repository.
+> Technical notes accompanying the code in this repository.
 > They describe the implemented algorithm, contain no figures, and are not the
 > manuscript. This is research code and has not been peer-reviewed.
 
@@ -16,26 +16,28 @@ The back surface is represented as a height field over the front-surface
 coordinates,
 
 $$
-\mathbf q(x,y) = \bigl(x,\; y,\; z_\theta(x,y)\bigr),
+\mathbf{q}(x,y) = \left( x, y, z_\theta(x,y) \right),
 $$
 
 where $z_\theta$ is a scalar function (in the implementation, a B-spline field).
 The projection plane is at $z=d$, and the prescribed target irradiance $E_t$ is
 defined on a rectangular domain $D_t$ in that plane.
 
-Let $n_{\rm lens}$ and $n_{\rm air}$ be the refractive indices of the lens and
-the surrounding medium, and let $\eta_{\rm lens}=n_{\rm lens}/n_{\rm air}$.
-Snell's law at the back surface is used in the usual vector form. For Fresnel
-losses, write $\eta=n_{\rm in}/n_{\rm out}$ (the ratio of the incident and
-outgoing indices, so that $\sin\theta_{\rm out}=\eta\sin\theta_{\rm in}$). For
-unpolarized light the reflectance is
+Let $n_{\mathrm{lens}}$ and $n_{\mathrm{air}}$ be the refractive indices of the
+lens and the surrounding medium, and let
+$\eta_{\mathrm{lens}}=n_{\mathrm{lens}}/n_{\mathrm{air}}$. Snell's law at the
+back surface is used in the usual vector form. For Fresnel losses, write
+$\eta=n_{\mathrm{in}}/n_{\mathrm{out}}$ (the ratio of the incident and outgoing
+indices, so that
+$\sin\theta_{\mathrm{out}}=\eta\sin\theta_{\mathrm{in}}$). For unpolarized
+light the reflectance is
 
 $$
-r_s=\frac{\eta\cos\theta_{\rm in}-\cos\theta_{\rm out}}
-         {\eta\cos\theta_{\rm in}+\cos\theta_{\rm out}},
+r_s=\frac{\eta\cos\theta_{\mathrm{in}}-\cos\theta_{\mathrm{out}}}
+         {\eta\cos\theta_{\mathrm{in}}+\cos\theta_{\mathrm{out}}},
 \qquad
-r_p=\frac{\cos\theta_{\rm in}-\eta\cos\theta_{\rm out}}
-         {\cos\theta_{\rm in}+\eta\cos\theta_{\rm out}},
+r_p=\frac{\cos\theta_{\mathrm{in}}-\eta\cos\theta_{\mathrm{out}}}
+         {\cos\theta_{\mathrm{in}}+\eta\cos\theta_{\mathrm{out}}},
 \qquad
 R=\frac{r_s^2+r_p^2}{2}.
 $$
@@ -44,13 +46,12 @@ The transmitted fraction is $\tau=1-R$ (per interface, ignoring absorption).
 
 In the continuous model, let $\phi:D_s\to D_t$ be the ray map induced by the
 lens. Energy conservation, including the accumulated transmission factor
-$L_{\rm ref}(\mathbf p)$, reads
+$L_{\mathrm{ref}}(\mathbf{p})$, reads
 
 $$
-I_s(\mathbf p)\,L_{\rm ref}(\mathbf p)
-=
-E_t\bigl(\phi(\mathbf p)\bigr)\,
-\bigl|\det\nabla\phi(\mathbf p)\bigr|.
+I_s(\mathbf{p}) L_{\mathrm{ref}}(\mathbf{p}) =
+E_t\left(\phi(\mathbf{p})\right)
+\left|\det\nabla\phi(\mathbf{p})\right|.
 $$
 
 ## 2. Pipeline overview
@@ -72,27 +73,38 @@ The design is computed in three stages:
    the target image, and minimizing the relative RMS error (RRMSE) against the
    target.
 
-## 3. Stage 1 — Reflection-aware OT initialization
+## 3. Stage 1 - Reflection-aware OT initialization
 
 ### 3.1 Semi-discrete OT
 
-The front-surface domain is sampled with $N$ points
-$S_0=\{\mathbf p_i\}_{i=1}^{N}$, including the four corners and covering the
-interior and boundary. A Voronoi tessellation of $D_s$ gives each sample a
-transport mass
+The quadratic transport cost between the source measure $I_s$ and the target
+measure $E_t$ is
 
 $$
-\lambda_i=\int_{V_i} I_s(\mathbf p)\,d\mathbf p .
+d(I_s,E_t)=\inf_{\phi\in\mathcal{M}}
+\int_{D_s}\left\|\phi(\mathbf{p})-\mathbf{p}\right\|^2
+\mathrm{d}I_s(\mathbf{p}),
+$$
+
+where $\mathcal{M}$ is the set of admissible energy-conserving maps.
+
+The front-surface domain is sampled with $N$ points
+$S_0=\lbrace \mathbf{p}_i \rbrace_{i=1}^{N}$, including the four corners and
+covering the interior and boundary. A Voronoi tessellation of $D_s$ gives each
+sample a transport mass
+
+$$
+\lambda_i=\int_{V_i} I_s(\mathbf{p}) \mathrm{d}\mathbf{p}.
 $$
 
 The target domain is assumed to be geometrically similar to $D_s$; a pattern
 that does not fill the domain can be embedded in a larger zero-irradiance
-region. Initial target sites $\mathbf s_i$ are obtained by applying the same
-similarity transform to $\mathbf p_i$. Together with the masses, they define
+region. Initial target sites $\mathbf{s}_i$ are obtained by applying the same
+similarity transform to $\mathbf{p}_i$. Together with the masses, they define
 the discrete target measure
 
 $$
-\nu_0=\sum_{i=1}^{N}\lambda_i\,\delta_{\mathbf s_i}.
+\nu_0=\sum_{i=1}^{N}\lambda_i \delta_{\mathbf{s}_i}.
 $$
 
 The target irradiance $E_t$, normalized to the same total mass, is an
@@ -101,55 +113,51 @@ the continuous target measure and $\nu_0$ is solved for scalar weights $w_i$
 that define a weighted Voronoi (power) diagram on $D_t$:
 
 $$
-\mathrm{Vor}^{w}_{i}
-=
-\left\{
-\mathbf x\in D_t:
-\|\mathbf x-\mathbf s_i\|^2-w_i
+\mathrm{Vor}_i^{w} =
+\left\lbrace
+\mathbf{x}\in D_t :
+\lVert \mathbf{x}-\mathbf{s}_i \rVert^2-w_i
 \le
-\|\mathbf x-\mathbf s_j\|^2-w_j
-\;\forall j
-\right\}.
+\lVert \mathbf{x}-\mathbf{s}_j \rVert^2-w_j
+\quad \forall j
+\right\rbrace.
 $$
 
 The weights minimize the dual objective
 
 $$
-F(w)
-=
--\sum_i \lambda_i w_i
--
-\sum_i \int_{\mathrm{Vor}^{w}_{i}}
+F(w) =
+-\sum_i \lambda_i w_i -
+\sum_i \int_{\mathrm{Vor}_i^{w}}
 \left(
-\|\mathbf x-\mathbf s_i\|^2-w_i
+\lVert \mathbf{x}-\mathbf{s}_i \rVert^2-w_i
 \right)
-d\mu(\mathbf x),
+\mathrm{d}\mu(\mathbf{x}),
 $$
 
 where $\mu$ is the target measure with density $E_t$. At the solution each
 cell carries its prescribed mass,
 
 $$
-\mu\bigl(\mathrm{Vor}^{w}_{i}\bigr)=\lambda_i ,
+\mu\left(\mathrm{Vor}_i^{w}\right)=\lambda_i,
 $$
 
-and the map sending every point of cell $i$ to $\mathbf s_i$ is the quadratic
+and the map sending every point of cell $i$ to $\mathbf{s}_i$ is the quadratic
 OT map. In practice, the correspondence used by the lens pipeline pairs each
-source sample $\mathbf p_i$ with the irradiance-weighted centroid of its cell,
+source sample $\mathbf{p}_i$ with the irradiance-weighted centroid of its cell,
 
 $$
-\bar{\mathbf q}_i
-=
+\bar{\mathbf{q}}_i =
 \frac{
-\int_{\mathrm{Vor}^{w}_{i}}
-\mathbf q\,E_t(\mathbf q)\,d\mathbf q
+\int_{\mathrm{Vor}_i^{w}}
+\mathbf{q} E_t(\mathbf{q}) \mathrm{d}\mathbf{q}
 }{
-\int_{\mathrm{Vor}^{w}_{i}}
-E_t(\mathbf q)\,d\mathbf q
+\int_{\mathrm{Vor}_i^{w}}
+E_t(\mathbf{q}) \mathrm{d}\mathbf{q}
 }.
 $$
 
-The pairs $(\mathbf p_i,\bar{\mathbf q}_i)$ form the initial ray
+The pairs $(\mathbf{p}_i,\bar{\mathbf{q}}_i)$ form the initial ray
 correspondence. The dual is convex and is solved with a standard convex
 optimizer.
 
@@ -165,48 +173,49 @@ surface, and therefore the Fresnel loss of each ray.
 ### 3.3 Fresnel-aware mass correction
 
 Starting from the converged weights of the conventional OT solve, the
-reflection-aware solve keeps the sites $\mathbf s_i$ fixed and iterates:
+reflection-aware solve keeps the sites $\mathbf{s}_i$ fixed and iterates the
+following steps.
 
-1. Build the power diagram for the current weights $w^k$ and compute the
-   irradiance-weighted centroid $\mathbf q_i^k$ of each cell $P_i^{w^k}$.
-2. For sample $\mathbf p_i$, form a hypothetical ray path: enter the
-   preliminary lens at $\mathbf p_i$, leave the back surface at the point
-   predicted by the current lens model, and travel to $\mathbf q_i^k$. This
-   path is used only to estimate the Fresnel loss; it does not have to satisfy
-   Snell's law exactly.
-3. Accumulate the transmission factor $\tau_i^k$ along that path and correct
-   the discrete mass,
+**Step 1.** Build the power diagram for the current weights $w^k$ and compute
+the irradiance-weighted centroid $\mathbf{q}_i^k$ of each cell $P_i^{w^k}$.
+
+**Step 2.** For sample $\mathbf{p}_i$, form a hypothetical ray path: enter the
+preliminary lens at $\mathbf{p}_i$, leave the back surface at the point
+predicted by the current lens model, and travel to $\mathbf{q}_i^k$. This path
+is used only to estimate the Fresnel loss; it does not have to satisfy Snell's
+law exactly.
+
+**Step 3.** Accumulate the transmission factor $\tau_i^k$ along that path and
+correct the discrete mass,
 
 $$
-\hat\lambda_i^k
-=
-\frac{\tau_i^k\,\lambda_i}
-     {\sum_j \tau_j^k\,\lambda_j}.
+\hat{\lambda}_i^{k} =
+\frac{\tau_i^{k} \lambda_i}
+     {\sum_j \tau_j^{k} \lambda_j}.
 $$
 
 Samples with larger reflection loss thus receive less transmitted energy.
-4. Update the weights by a fixed-point step on the mass mismatch,
+
+**Step 4.** Update the weights by a fixed-point step on the mass mismatch,
 
 $$
-w_i^{k+1}
-=
-w_i^k
--
+w_i^{k+1} =
+w_i^{k} -
 \alpha_r
 \left(
-\int_{P_i^{w^k}} E_t(\mathbf q)\,d\mathbf q
--
-\hat\lambda_i^k
+\int_{P_i^{w^k}} E_t(\mathbf{q}) \mathrm{d}\mathbf{q} -
+\hat{\lambda}_i^{k}
 \right),
-\qquad \alpha_r>0.
+\qquad \alpha_r\gt0.
 $$
 
-The step size is chosen from the projection-domain scale, and Anderson
-acceleration is used to improve convergence. After convergence, the cell
-centroids $\mathbf q_i$ are collected as the target samples $D_0$, and the
+In the implementation the step size is set to
+$\alpha_r=|D_t|/10$, where $|D_t|$ is the area of the projection domain.
+Anderson acceleration is used to improve convergence. After convergence, the
+cell centroids $\mathbf{q}_i$ are collected as the target samples $D_0$, and the
 final initial correspondence pairs $S_0$ with $D_0$.
 
-## 4. Stage 2 — Surface fitting and correspondence refinement
+## 4. Stage 2 - Surface fitting and correspondence refinement
 
 ### 4.1 B-spline surface and target normals
 
@@ -215,8 +224,7 @@ $n\times n$ tensor-product knot grid with open uniform knot vectors in both
 parametric directions. Its (unnormalized) normal is
 
 $$
-\mathbf n_b(x,y)
-=
+\mathbf{n}_b(x,y) =
 \left(
 -\frac{\partial z_\theta}{\partial x},
 -\frac{\partial z_\theta}{\partial y},
@@ -224,26 +232,24 @@ $$
 \right).
 $$
 
-Given a source point $\mathbf p(x,y)$ and its target $\mathbf t(x,y)$, the
+Given a source point $\mathbf{p}(x,y)$ and its target $\mathbf{t}(x,y)$, the
 incoming direction inside the lens is $(0,0,1)^\top$ and the desired outgoing
-direction is proportional to $\mathbf t-\mathbf q$. Snell's law in vector form
-gives the target normal
+direction is proportional to $\mathbf{t}-\mathbf{q}$. Snell's law in vector
+form gives the target normal
 
 $$
-\mathbf n_b
-\;\propto\;
-\eta_{\rm lens}(0,0,1)^\top
--
-\frac{\mathbf t(x,y)-\mathbf q(x,y)}
-     {\|\mathbf t(x,y)-\mathbf q(x,y)\|_2}.
+\mathbf{n}_b
+\propto
+\eta_{\mathrm{lens}} (0,0,1)^\top -
+\frac{\mathbf{t}(x,y)-\mathbf{q}(x,y)}
+     {\lVert \mathbf{t}(x,y)-\mathbf{q}(x,y) \rVert_2}.
 $$
 
-Because the $z$-component of $\mathbf n_b$ is positive, the target gradient of
+Because the $z$-component of $\mathbf{n}_b$ is positive, the target gradient of
 the height field is obtained by normalizing with $n_3$:
 
 $$
-(g_1,g_2)
-=
+(g_1,g_2) =
 \left(
 -\frac{n_1}{n_3},
 -\frac{n_2}{n_3}
@@ -253,45 +259,40 @@ $$
 ### 4.2 Surface-fitting objective
 
 The spline is optimized so that its gradient matches the target gradient at a
-set of sample points $\mathcal S$:
+set of sample points $\mathcal{S}$:
 
 $$
-\mathcal L_{\rm grad}
-=
-\sum_{\mathbf p\in\mathcal S}
-\left\|
+\mathcal{L}_{\mathrm{grad}} =
+\sum_{\mathbf{p}\in\mathcal{S}}
+\left\lVert
 \left(
-\frac{\partial z_\theta}{\partial x}(\mathbf p),
-\frac{\partial z_\theta}{\partial y}(\mathbf p)
-\right)
--
-\bigl(g_1(\mathbf p),g_2(\mathbf p)\bigr)
-\right\|_2^2 .
+\frac{\partial z_\theta}{\partial x}(\mathbf{p}),
+\frac{\partial z_\theta}{\partial y}(\mathbf{p})
+\right) -
+\left(g_1(\mathbf{p}),g_2(\mathbf{p})\right)
+\right\rVert_2.
 $$
 
 Two regularizers keep the lens physically plausible. The mean curvature $H$ is
-penalized on a regular sample set $\mathcal S_{\rm reg}$:
+penalized on a regular sample set $\mathcal{S}_{\mathrm{reg}}$ taken at the
+centers of the $n\times n$ spline cells:
 
 $$
-\mathcal L_{\rm curv}
-=
-\frac{1}{|\mathcal S_{\rm reg}|}
-\sum_{\mathbf p\in\mathcal S_{\rm reg}}
-|H(\mathbf p)| .
+\mathcal{L}_{\mathrm{curv}} =
+\frac{1}{|\mathcal{S}_{\mathrm{reg}}|}
+\sum_{\mathbf{p}\in\mathcal{S}_{\mathrm{reg}}}
+|H(\mathbf{p})|.
 $$
 
 For thickness, a desired minimum thickness $h$ is prescribed. The target
 average height is computed with a stop-gradient,
 
 $$
-\bar h
-=
-\operatorname{sg}\!\left(
-\frac{1}{|\mathcal S_{\rm reg}|}
-\sum_{\mathbf p\in\mathcal S_{\rm reg}} z_\theta(\mathbf p)
--
-\min_{\mathbf p\in\mathcal S_{\rm reg}} z_\theta(\mathbf p)
-+
+\bar{h} =
+\mathrm{sg}\left(
+\frac{1}{|\mathcal{S}_{\mathrm{reg}}|}
+\sum_{\mathbf{p}\in\mathcal{S}_{\mathrm{reg}}} z_\theta(\mathbf{p}) -
+\min_{\mathbf{p}\in\mathcal{S}_{\mathrm{reg}}} z_\theta(\mathbf{p}) +
 h
 \right),
 $$
@@ -299,29 +300,24 @@ $$
 and the average height is matched to it:
 
 $$
-\mathcal L_{\rm thic}
-=
+\mathcal{L}_{\mathrm{thic}} =
 \left(
-\frac{1}{|\mathcal S_{\rm reg}|}
-\sum_{\mathbf p\in\mathcal S_{\rm reg}} z_\theta(\mathbf p)
--
-\bar h
-\right)^2 .
+\frac{1}{|\mathcal{S}_{\mathrm{reg}}|}
+\sum_{\mathbf{p}\in\mathcal{S}_{\mathrm{reg}}} z_\theta(\mathbf{p}) -
+\bar{h}
+\right)^2.
 $$
 
 The surface-fitting loss is
 
 $$
-\mathcal L_1
-=
-\lambda_{\rm grad}\mathcal L_{\rm grad}
-+
-\lambda_{\rm curv}\mathcal L_{\rm curv}
-+
-\lambda_{\rm thic}\mathcal L_{\rm thic}.
+\mathcal{L}_1 =
+\lambda_{\mathrm{grad}}\mathcal{L}_{\mathrm{grad}} +
+\lambda_{\mathrm{curv}}\mathcal{L}_{\mathrm{curv}} +
+\lambda_{\mathrm{thic}}\mathcal{L}_{\mathrm{thic}}.
 $$
 
-In the first round, $\mathcal S$ and the target points are the OT samples
+In the first round, $\mathcal{S}$ and the target points are the OT samples
 $S_0$ and $D_0$. In later rounds they are replaced by the refined
 correspondence from Section 4.3.
 
@@ -335,19 +331,19 @@ uniformly subdivided into four (Loop subdivision), and the new vertices become
 additional optimization variables.
 
 The optimization variables are the front-surface vertices
-$S=\{(\mathbf x_i,\mathbf y_i)\}$ and the target vertices
-$D=\{(\mathbf u_i,\mathbf v_i)\}$. Boundary vertices are constrained to move
-along the boundary, and corner vertices are fixed. The lens geometry $z_\theta$
-is held fixed during a correspondence-refinement step.
+$S=\lbrace(\mathbf{x}_i,\mathbf{y}_i)\rbrace$ and the target vertices
+$D=\lbrace(\mathbf{u}_i,\mathbf{v}_i)\rbrace$. Boundary vertices are
+constrained to move along the boundary, and corner vertices are fixed. The lens
+geometry $z_\theta$ is held fixed during a correspondence-refinement step.
 
 ### 4.4 Irradiance matching
 
-The incident flux of a front-surface triangle $t_i$ is proportional to its
-area $A(t_i)$. To account for Fresnel loss, the raw flux is corrected by an
+The incident flux of a front-surface triangle $t_i$ is proportional to its area
+$A(t_i)$. To account for Fresnel loss, the raw flux is corrected by an
 estimated total transmittance,
 
 $$
-\tau_{\rm tot}=\tau_s\,\tau_b ,
+\tau_{\mathrm{tot}}=\tau_s \tau_b,
 $$
 
 where $\tau_s$ is the front-surface transmittance and $\tau_b$ is the
@@ -356,113 +352,107 @@ implied by the current correspondence rather than from the actual surface
 normal. This ideal-path estimate keeps the early optimization stable when
 surface normals are poor or when a ray would otherwise undergo total internal
 reflection. The transmittance of triangle $t_i$ is the average of its three
-vertex values, denoted $\bar\tau_{t_i}$, and the corrected transmitted flux is
+vertex values, denoted $\bar{\tau}_{t_i}$, and the corrected transmitted flux
+is
 
 $$
-\ell^c_{t_i}=\bar\tau_{t_i}\,\ell_{t_i}.
+\ell^c_{t_i}=\bar{\tau}_{t_i}\ell_{t_i}.
 $$
 
 The flux assigned to the corresponding projection triangle is normalized so
 that the total transmitted energy matches the target:
 
 $$
-\ell'_{t_i}
-=
-c_{\rm total}
+\ell'_{t_i} =
+c_{\mathrm{total}}
 \frac{\ell^c_{t_i}}{\sum_j \ell^c_{t_j}},
 $$
 
-where $c_{\rm total}$ is the total flux required by the target irradiance
+where $c_{\mathrm{total}}$ is the total flux required by the target irradiance
 distribution. The projection domain is divided into pixels; assuming uniform
 irradiance inside each projection triangle, the flux contribution to pixel
 $p_j$ is
 
 $$
-\ell_{t'_i,p_j}
-=
+\ell_{t'_i,p_j} =
 \ell'_{t_i}
 \frac{A(t'_i\cap p_j)}{A(t'_i)},
 \qquad
-\ell_{p_j}
-=
+\ell_{p_j} =
 \sum_i \ell_{t'_i,p_j}.
 $$
 
-With target pixel values $\ell^{\rm target}_{p_j}$ and
-$\ell_{\max}=\max_j \ell^{\rm target}_{p_j}$, the irradiance loss is
+With target pixel values $\ell_{p_j}^{\mathrm{target}}$ and
+$\ell_{\max}=\max_j \ell_{p_j}^{\mathrm{target}}$ the pixel count $m$, the
+irradiance loss is
 
 $$
-\mathcal L_{\rm irra}
-=
+\mathcal{L}_{\mathrm{irra}} =
 \frac{1}{m}
 \sum_{j=1}^{m}
 \left(
-\frac{\ell_{p_j}-\ell^{\rm target}_{p_j}}{\ell_{\max}}
-\right)^2 .
+\frac{\ell_{p_j}-\ell_{p_j}^{\mathrm{target}}}{\ell_{\max}}
+\right)^2.
 $$
 
 A boundary term keeps the target vertices inside $D_t$:
 
 $$
-\mathcal L_{\rm bdr}
-=
-\sum_{\mathbf q_i\in D}
-\operatorname{dis}(\mathbf q_i,D_t)^2 .
+\mathcal{L}_{\mathrm{bdr}} =
+\sum_{\mathbf{q}_i\in D}
+\operatorname{dist}(\mathbf{q}_i,D_t)^2.
 $$
 
 ### 4.5 Integrability
 
 A correspondence is physically realizable only if the induced target gradient
-field $\mathbf g=(g_1,g_2)$ is integrable. On the triangulated mesh this is
+field $\mathbf{g}=(g_1,g_2)$ is integrable. On the triangulated mesh this is
 enforced approximately by penalizing the discrete curl on every triangle.
-Linearly interpolating $\mathbf g$ inside $t_i$, the curl is computed as the
+Linearly interpolating $\mathbf{g}$ inside $t_i$, the curl is computed as the
 boundary line integral
 
 $$
-\operatorname{curl}_{t_i}
-=
-\oint_{\partial t_i}\mathbf g\cdot d\mathbf l
-=
+\operatorname{curl}_{t_i} =
+\oint_{\partial t_i}\mathbf{g}\cdot \mathrm{d}\mathbf{l} =
 \sum_{k=0}^{2}
-\frac{\mathbf g(\mathbf v_k)+\mathbf g(\mathbf v_{(k+1)\bmod 3})}{2}
+\frac{\mathbf{g}(\mathbf{v}_k)+\mathbf{g}(\mathbf{v}_{(k+1)\bmod 3})}{2}
 \cdot
-\bigl(\mathbf v_{(k+1)\bmod 3}-\mathbf v_k\bigr),
+\left(\mathbf{v}_{(k+1)\bmod 3}-\mathbf{v}_k\right),
 $$
 
-where $\mathbf v_0,\mathbf v_1,\mathbf v_2$ are the triangle's vertices. The
+where $\mathbf{v}_0,\mathbf{v}_1,\mathbf{v}_2$ are the triangle's vertices. The
 integrability loss is
 
 $$
-\mathcal L_{\rm int}
-=
+\mathcal{L}_{\mathrm{int}} =
 \frac{1}{|D_s|}
 \sum_{t_i\in T}
-\bigl(\operatorname{curl}_{t_i}\bigr)^2 .
+\left(\operatorname{curl}_{t_i}\right)^2.
 $$
 
 ### 4.6 Mesh regularization
 
-Triangle areas on the front mesh are kept within a range
-$[\alpha,\beta]$ with smooth barriers. Let
-$0<\alpha<\tilde\alpha<\tilde\beta<\beta$. The two barriers are
+Triangle areas on the front mesh are kept within a range $[\alpha,\beta]$ with
+smooth barriers. Let
+$0\lt\alpha\lt\tilde{\alpha}\lt\tilde{\beta}\lt\beta$. The two barriers are
 
 $$
-B_{\rm lower}(t_i)=
+B_{\mathrm{lower}}(t_i)=
 \begin{cases}
-+\infty, & A(t_i)<\alpha,\\
-\left(\dfrac{\tilde\alpha-\alpha}{A(t_i)-\alpha}\right)^2-1,
-& \alpha<A(t_i)\le\tilde\alpha,\\
-0, & A(t_i)>\tilde\alpha,
++\infty, & A(t_i)\lt\alpha,\\
+\left(\frac{\tilde{\alpha}-\alpha}{A(t_i)-\alpha}\right)^2-1,
+& \alpha\lt A(t_i)\le\tilde{\alpha},\\
+0, & A(t_i)\gt\tilde{\alpha}.
 \end{cases}
 $$
 
 $$
-B_{\rm upper}(t_i)=
+B_{\mathrm{upper}}(t_i)=
 \begin{cases}
-+\infty, & A(t_i)>\beta,\\
-\left(\dfrac{\beta-\tilde\beta}{\beta-A(t_i)}\right)^2-1,
-& \tilde\beta\le A(t_i)<\beta,\\
-0, & A(t_i)<\tilde\beta.
++\infty, & A(t_i)\gt\beta,\\
+\left(\frac{\beta-\tilde{\beta}}{\beta-A(t_i)}\right)^2-1,
+& \tilde{\beta}\le A(t_i)\lt\beta,\\
+0, & A(t_i)\lt\tilde{\beta}.
 \end{cases}
 $$
 
@@ -470,40 +460,40 @@ Large triangles are allowed on the projection mesh (for example in dim
 regions, where few rays are needed), so $T'$ receives only a lower barrier
 
 $$
-B'_{\rm lower}(t'_i)=
+B'_{\mathrm{lower}}(t'_i)=
 \begin{cases}
-+\infty, & A(t'_i)<\alpha',\\
-\left(\dfrac{\tilde\alpha'-\alpha'}{A(t'_i)-\alpha'}\right)^2-1,
-& \alpha'<A(t'_i)\le\tilde\alpha',\\
-0, & A(t'_i)>\tilde\alpha'.
++\infty, & A(t'_i)\lt\alpha',\\
+\left(\frac{\tilde{\alpha}'-\alpha'}{A(t'_i)-\alpha'}\right)^2-1,
+& \alpha'\lt A(t'_i)\le\tilde{\alpha}',\\
+0, & A(t'_i)\gt\tilde{\alpha}'.
 \end{cases}
 $$
 
 The thresholds are expressed as fractions of the reference average triangle
-area of the current mesh and are kept fixed during a refinement round. The
-regularization loss is
+area of the current mesh and are kept fixed during a refinement round. In the
+implementation they are set to $1\%$, $20\%$, $150\%$, $200\%$ of the reference
+front-surface area for $\alpha$, $\tilde{\alpha}$, $\tilde{\beta}$, $\beta$,
+and to $0$ and $2\%$ of the reference projected area for $\alpha'$ and
+$\tilde{\alpha}'$. The regularization loss is
 
 $$
-\mathcal L_{\rm reg}
-=
+\mathcal{L}_{\mathrm{reg}} =
 \sum_{t_i\in T}
-\bigl(B_{\rm lower}(t_i)+B_{\rm upper}(t_i)\bigr)
-+
-\sum_{t'_i\in T'} B'_{\rm lower}(t'_i).
+\left(B_{\mathrm{lower}}(t_i)+B_{\mathrm{upper}}(t_i)\right) +
+\sum_{t'_i\in T'} B'_{\mathrm{lower}}(t'_i).
 $$
 
 Before the main refinement, a short preprocessing step fixes flipped or
 degenerate projection triangles by optimizing only the vertices of $T'$:
 
 $$
-\mathcal L_{\rm pre}
-=
-\sum_{\substack{t'_i\in T'\\ A(t'_i)<\tilde\alpha'}}
-\left(\tilde\alpha'-A(t'_i)\right)^2 ,
+\mathcal{L}_{\mathrm{pre}} =
+\sum_{t'_i\in T',\; A(t'_i)\lt\tilde{\alpha}'}
+\left(\tilde{\alpha}'-A(t'_i)\right)^2,
 $$
 
 stopping once every projection triangle satisfies
-$A(t'_i)>\tfrac12\tilde\alpha'$.
+$A(t'_i)\gt\frac{1}{2}\tilde{\alpha}'$.
 
 ### 4.7 Alternating optimization
 
@@ -511,87 +501,81 @@ Correspondence refinement and surface fitting alternate. With the lens fixed,
 the correspondence minimizes
 
 $$
-\mathcal L_2
-=
-\lambda_{\rm irra}\mathcal L_{\rm irra}
-+
-\lambda_{\rm int}\mathcal L_{\rm int}
-+
-\lambda_{\rm reg}\mathcal L_{\rm reg}
-+
-\lambda_{\rm bdr}\mathcal L_{\rm bdr}.
+\mathcal{L}_2 =
+\lambda_{\mathrm{irra}}\mathcal{L}_{\mathrm{irra}} +
+\lambda_{\mathrm{int}}\mathcal{L}_{\mathrm{int}} +
+\lambda_{\mathrm{reg}}\mathcal{L}_{\mathrm{reg}} +
+\lambda_{\mathrm{bdr}}\mathcal{L}_{\mathrm{bdr}}.
 $$
 
 The weights balance irradiance accuracy, integrability, mesh quality, and the
-boundary constraint. The integrability weight is ramped up over the first
-refinement round to avoid an excessively large gradient at the beginning; the
-schedule is an implementation detail.
+boundary constraint. The values used in the implementation are
+$\lambda_{\mathrm{irra}}=1$, $\lambda_{\mathrm{int}}=3\times10^{5}$,
+$\lambda_{\mathrm{reg}}=1\times10^{-9}$ and
+$\lambda_{\mathrm{bdr}}=1\times10^{-1}$. The integrability weight is ramped up
+over the first refinement round to avoid an excessively large gradient at the
+beginning.
 
-After each refinement, the pairs $(S,D)$ become the samples and targets for
-the next surface-fitting round. The process is repeated coarse-to-fine. In the
+After each refinement, the pairs $(S,D)$ become the samples and targets for the
+next surface-fitting round. The process is repeated coarse-to-fine. In the
 third refinement round the triangulation is subdivided (each triangle into
 four), and the B-spline grid is refined.
 
-## 5. Stage 3 — Differentiable ray tracing
+## 5. Stage 3 - Differentiable ray tracing
 
 The lens from Stage 2 is close to the target but still carries fitting error
-and curvature-induced redistribution. A final end-to-end refinement traces
-many rays through the actual surface.
+and curvature-induced redistribution. A final end-to-end refinement traces many
+rays through the actual surface.
 
 The front surface is sampled uniformly with $N_r$ rays
-$\mathcal S_{\rm ray}=\{\mathbf s_k\}$. Because the source is a uniform
-collimated beam, all rays carry equal incident weight. Each ray is traced
-through the lens with Snell's law, and the accumulated Fresnel transmittance
-$\tau_k$ is computed along its path. The transmitted energies are normalized
-so that their total matches the target flux:
+$\mathcal{S}_{\mathrm{ray}}=\lbrace\mathbf{s}_k\rbrace$. Because the source is
+a uniform collimated beam, all rays carry equal incident weight. Each ray is
+traced through the lens with Snell's law, and the accumulated Fresnel
+transmittance $\tau_k$ is computed along its path. The transmitted energies are
+normalized so that their total matches the target flux:
 
 $$
-\tilde\beta_k
-=
-c_{\rm total}
+\tilde{\beta}_k =
+c_{\mathrm{total}}
 \frac{\beta_k}{\sum_h \beta_h},
 \qquad
-\beta_k\propto\tau_k .
+\beta_k\propto\tau_k.
 $$
 
-A ray intersects the projection plane at $\mathbf y_k$. To obtain a
+A ray intersects the projection plane at $\mathbf{y}_k$. To obtain a
 differentiable image, its energy is distributed over a local pixel window with
-a Gaussian kernel. Let $\mathbf c_j$ be the center of pixel $P_j$, and let
-$\tilde{\mathcal N}_k$ be the full window around $\mathbf y_k$. For each pixel
-in the window,
+a Gaussian kernel. Let $\mathbf{c}_j$ be the center of pixel $P_j$, and let
+$\tilde{\mathcal{N}}_k$ be the full window around $\mathbf{y}_k$. For each
+pixel in the window,
 
 $$
-G_{kj}
-=
+G_{kj} =
 \exp\left(
--\frac{\|\mathbf y_k-\mathbf c_j\|^2}{2\sigma^2}
+-\frac{\lVert \mathbf{y}_k-\mathbf{c}_j \rVert^2}{2\sigma^2}
 \right),
 \qquad
-\omega_{kj}
-=
-\frac{G_{kj}}{\sum_{h\in\tilde{\mathcal N}_k}G_{kh}} .
+\omega_{kj} =
+\frac{G_{kj}}{\sum_{h\in\tilde{\mathcal{N}}_k}G_{kh}}.
 $$
 
 Only contributions to valid pixels
-$j\in\mathcal N_k\subseteq\tilde{\mathcal N}_k$ are accumulated:
+$j\in\mathcal{N}_k\subseteq\tilde{\mathcal{N}}_k$ are accumulated:
 
 $$
-\ell^{\rm sim}_{P_j}
-=
-\sum_{k=1}^{N_r}\tilde\beta_k\,\omega_{kj},
+\ell_{P_j}^{\mathrm{sim}} =
+\sum_{k=1}^{N_r}\tilde{\beta}_k \omega_{kj},
 \qquad
-\omega_{kj}=0 \text{ if } P_j\notin\mathcal N_k .
+\omega_{kj}=0 \quad \text{if } P_j\notin\mathcal{N}_k.
 $$
 
 The simulated image is compared with the target using RRMSE:
 
 $$
-\mathcal L_{\rm sim}
-=
+\mathcal{L}_{\mathrm{sim}} =
 \sqrt{
 \frac{
 \sum_{j=1}^{m}
-\bigl(\ell^{\rm sim}_{P_j}-\ell_{P_j}\bigr)^2
+\left(\ell_{P_j}^{\mathrm{sim}}-\ell_{P_j}\right)^2
 }{
 \sum_{j=1}^{m}\ell_{P_j}^2
 }
@@ -601,17 +585,15 @@ $$
 The final objective also includes the curvature and thickness regularizers:
 
 $$
-\mathcal L_3
-=
-\lambda_{\rm sim}\mathcal L_{\rm sim}
-+
-\lambda_{\rm curv}\mathcal L_{\rm curv}
-+
-\lambda_{\rm thic}\mathcal L_{\rm thic}.
+\mathcal{L}_3 =
+\lambda_{\mathrm{sim}}\mathcal{L}_{\mathrm{sim}} +
+\lambda_{\mathrm{curv}}\mathcal{L}_{\mathrm{curv}} +
+\lambda_{\mathrm{thic}}\mathcal{L}_{\mathrm{thic}}.
 $$
 
-The splatting window and kernel width are implementation constants, and the
-three loss terms are balanced by scalar weights.
+The splatting window radius and kernel width are implementation constants. In
+the reference experiments $r=2$ and $\sigma=0.5$, and the three loss weights
+are $\lambda_{\mathrm{sim}}=\lambda_{\mathrm{curv}}=\lambda_{\mathrm{thic}}=1$.
 
 ## 6. Known limitations
 
