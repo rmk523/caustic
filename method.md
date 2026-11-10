@@ -336,6 +336,7 @@ $D=\lbrace(\mathbf{u}_i,\mathbf{v}_i)\rbrace$. Boundary vertices are
 constrained to move along the boundary, and corner vertices are fixed. The lens
 geometry $z_\theta$ is held fixed during a correspondence-refinement step.
 
+
 ### 4.4 Irradiance matching
 
 The incident flux of a front-surface triangle $t_i$ is proportional to its area
@@ -400,7 +401,7 @@ A boundary term keeps the target vertices inside $D_t$:
 $$
 \mathcal{L}_{\mathrm{bdr}} =
 \sum_{\mathbf{q}_i\in D}
-\operatorname{dist}(\mathbf{q}_i,D_t)^2.
+\mathrm{dist}(\mathbf{q}_i,D_t)^2.
 $$
 
 ### 4.5 Integrability
@@ -412,7 +413,7 @@ Linearly interpolating $\mathbf{g}$ inside $t_i$, the curl is computed as the
 boundary line integral
 
 $$
-\operatorname{curl}_{t_i} =
+\mathrm{curl}_{t_i} =
 \oint_{\partial t_i}\mathbf{g}\cdot \mathrm{d}\mathbf{l} =
 \sum_{k=0}^{2}
 \frac{\mathbf{g}(\mathbf{v}_k)+\mathbf{g}(\mathbf{v}_{(k+1)\bmod 3})}{2}
@@ -427,7 +428,7 @@ $$
 \mathcal{L}_{\mathrm{int}} =
 \frac{1}{|D_s|}
 \sum_{t_i\in T}
-\left(\operatorname{curl}_{t_i}\right)^2.
+\left(\mathrm{curl}_{t_i}\right)^2.
 $$
 
 ### 4.6 Mesh regularization
@@ -494,32 +495,6 @@ $$
 
 stopping once every projection triangle satisfies
 $A(t'_i)\gt\frac{1}{2}\tilde{\alpha}'$.
-
-### 4.7 Alternating optimization
-
-Correspondence refinement and surface fitting alternate. With the lens fixed,
-the correspondence minimizes
-
-$$
-\mathcal{L}_2 =
-\lambda_{\mathrm{irra}}\mathcal{L}_{\mathrm{irra}} +
-\lambda_{\mathrm{int}}\mathcal{L}_{\mathrm{int}} +
-\lambda_{\mathrm{reg}}\mathcal{L}_{\mathrm{reg}} +
-\lambda_{\mathrm{bdr}}\mathcal{L}_{\mathrm{bdr}}.
-$$
-
-The weights balance irradiance accuracy, integrability, mesh quality, and the
-boundary constraint. The values used in the implementation are
-$\lambda_{\mathrm{irra}}=1$, $\lambda_{\mathrm{int}}=3\times10^{5}$,
-$\lambda_{\mathrm{reg}}=1\times10^{-9}$ and
-$\lambda_{\mathrm{bdr}}=1\times10^{-1}$. The integrability weight is ramped up
-over the first refinement round to avoid an excessively large gradient at the
-beginning.
-
-After each refinement, the pairs $(S,D)$ become the samples and targets for the
-next surface-fitting round. The process is repeated coarse-to-fine. In the
-third refinement round the triangulation is subdivided (each triangle into
-four), and the B-spline grid is refined.
 
 ## 5. Stage 3 - Differentiable ray tracing
 
