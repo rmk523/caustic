@@ -492,6 +492,32 @@ $$
 stopping once every projection triangle satisfies
 $A(t'_i)\gt\frac{1}{2}\tilde{\alpha}'$.
 
+### 4.7 Alternating optimization
+
+Correspondence refinement and surface fitting alternate. With the lens fixed,
+the correspondence minimizes
+
+$$
+\mathcal{L}_2 =
+\lambda_{\mathrm{irra}}\mathcal{L}_{\mathrm{irra}} +
+\lambda_{\mathrm{int}}\mathcal{L}_{\mathrm{int}} +
+\lambda_{\mathrm{reg}}\mathcal{L}_{\mathrm{reg}} +
+\lambda_{\mathrm{bdr}}\mathcal{L}_{\mathrm{bdr}}.
+$$
+
+The weights balance irradiance accuracy, integrability, mesh quality, and the
+boundary constraint. The values used in the implementation are
+$\lambda_{\mathrm{irra}}=1$, $\lambda_{\mathrm{int}}=3\times10^{5}$,
+$\lambda_{\mathrm{reg}}=1\times10^{-9}$ and
+$\lambda_{\mathrm{bdr}}=1\times10^{-1}$. The integrability weight is ramped up
+over the first refinement round to avoid an excessively large gradient at the
+beginning.
+
+After each refinement, the pairs $(S,D)$ become the samples and targets for the
+next surface-fitting round. The process is repeated coarse-to-fine. In the
+third refinement round the triangulation is subdivided (each triangle into
+four), and the B-spline grid is refined.
+
 ## 5. Stage 3 - Differentiable ray tracing
 
 The lens from Stage 2 is close to the target but still carries fitting error
