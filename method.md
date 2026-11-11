@@ -19,10 +19,7 @@ where $z_\theta$ is a scalar function (in the implementation, a B-spline field).
 The projection plane is at $z=d$, and the prescribed target irradiance $E_t$ is
 defined on a rectangular domain $D_t$ in that plane.
 
-Let $n_{\mathrm{lens}}$ and $n_{\mathrm{air}}$ be the refractive indices of the
-lens and the surrounding medium, and let
-$\eta_{\mathrm{lens}}=n_{\mathrm{lens}}/n_{\mathrm{air}}$. Snell's law at the
-back surface is used in the usual vector form. For Fresnel losses, write
+Snell's law at the back surface is used in the usual vector form. For Fresnel losses, write
 $\eta=n_{\mathrm{in}}/n_{\mathrm{out}}$ (the ratio of the incident and outgoing
 indices, so that
 $\sin\theta_{\mathrm{out}}=\eta\sin\theta_{\mathrm{in}}$). For unpolarized
